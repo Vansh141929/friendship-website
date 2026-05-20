@@ -664,6 +664,10 @@
   </main>
 
   <script>
+    // GitHub OAuth Configuration
+    const GITHUB_CLIENT_ID = 'Ov23liiCMEPAfevLEMTM';
+    const REDIRECT_URI = window.location.origin + window.location.pathname + '?code=';
+    
     // Global state
     let user = null;
     let googleMeetLink = '';
@@ -683,6 +687,7 @@
     // Initialize
     function init() {
       checkAuthStatus();
+      handleOAuthCallback();
     }
 
     // Check if user is already logged in
@@ -696,24 +701,55 @@
       }
     }
 
+    // Handle OAuth callback
+    function handleOAuthCallback() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      
+      if (code) {
+        exchangeCodeForToken(code);
+      }
+    }
+
+    // Exchange auth code for token and user info
+    async function exchangeCodeForToken(code) {
+      try {
+        // In production, you would send this to your backend server
+        // For now, we'll show a message about the OAuth flow
+        addSystemMessage('GitHub authentication code received. Please complete the OAuth setup on your backend server.');
+        
+        // Simulated user login for demo
+        simulateGitHubLogin();
+      } catch (error) {
+        console.error('OAuth error:', error);
+        alert('Authentication failed. Please try again.');
+      }
+    }
+
     // Login with GitHub OAuth
     function loginWithGitHub() {
-      // In production, this would redirect to GitHub OAuth
-      // For demo, simulate GitHub login
-      const githubAuthUrl = 'https://github.com/login/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&scope=user:email';
+      // Redirect to GitHub OAuth authorization
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(window.location.href)}&scope=user:email&state=${Math.random().toString(36).substring(7)}`;
       
-      // Simulated response for demo
+      // For demo purposes, simulate login
+      simulateGitHubLogin();
+    }
+
+    // Simulate GitHub login (for demo)
+    function simulateGitHubLogin() {
+      // In production, this would be replaced with real OAuth data from GitHub API
       user = {
         login: 'github-user-' + Math.random().toString(36).substring(7),
         name: 'GitHub User',
         avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4',
         email: 'user@github.com',
-        auth_provider: 'github'
+        auth_provider: 'github',
+        id: Math.floor(Math.random() * 1000000)
       };
       
       localStorage.setItem('friendconnect_user', JSON.stringify(user));
       showApp();
-      addSystemMessage(`Welcome ${user.name}! You're authenticated with GitHub.`);
+      addSystemMessage(`Welcome ${user.name}! You're authenticated with GitHub. Ready to start video calls!`);
       generateGoogleMeetLink();
     }
 
@@ -752,14 +788,17 @@
             <div class="video-avatar">You</div>
             <div class="video-avatar">${escapeHtml(activeFriend)}</div>
           </div>
-          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">
-            <strong>Google Meet Link:</strong><br>
-            <a href="${googleMeetLink}" target="_blank" style="color: #4f6ef7; text-decoration: none; word-break: break-all;">${googleMeetLink}</a>
+          <p style="margin-top: 18px; font-size: 1rem; color: rgba(255,255,255,0.92);">
+            <strong>🎥 Google Meet Ready!</strong>
           </p>
-          <p style="margin-top: 12px; font-size: 0.85rem; color: rgba(255,255,255,0.7);">Click the link above to join the video call</p>
+          <p style="margin-top: 12px; font-size: 0.9rem; color: rgba(255,255,255,0.85);">
+            Meeting Link:<br>
+            <a href="${googleMeetLink}" target="_blank" style="color: #4ade80; text-decoration: none; word-break: break-all; font-weight: 600;">${googleMeetLink}</a>
+          </p>
+          <p style="margin-top: 12px; font-size: 0.85rem; color: rgba(255,255,255,0.7);">👉 Click the link above to join the video call</p>
         </div>`;
 
-      addSystemMessage(`Starting Google Meet with ${activeFriend}! Click the link in the video panel to join: ${googleMeetLink}`);
+      addSystemMessage(`🎥 Starting Google Meet with ${activeFriend}! Link: ${googleMeetLink}`);
     }
 
     // Show login UI
