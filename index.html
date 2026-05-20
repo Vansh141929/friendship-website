@@ -1,0 +1,662 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FriendConnect</title>
+  <style>
+    :root {
+      --background: #eef2f7;
+      --surface: #ffffff;
+      --primary: #4f6ef7;
+      --primary-soft: #dce7ff;
+      --accent: #10b981;
+      --text: #1f2937;
+      --muted: #64748b;
+      --shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f8fbff 0%, #eef2f7 100%);
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 32px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      width: min(1200px, 100%);
+      background: var(--surface);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: 720px;
+    }
+
+    .sidebar {
+      padding: 28px;
+      background: #f5f8ff;
+      border-right: 1px solid rgba(15, 23, 42, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .logo-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--primary);
+    }
+
+    .section-title {
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .friend-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .friend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: white;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .friend-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .friend-details {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .friend-meta {
+      display: grid;
+      gap: 4px;
+    }
+
+    .friend-meta strong {
+      font-size: 0.98rem;
+    }
+
+    .friend-meta span {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .cta-button {
+      border: none;
+      color: white;
+      background: var(--primary);
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .cta-button:hover {
+      background: #3a55d1;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      padding: 32px;
+      gap: 24px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .hero-copy h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 4vw, 3.4rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-copy p {
+      max-width: 680px;
+      margin: 24px 0 0;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .hero-card {
+      background: var(--primary);
+      color: white;
+      border-radius: 28px;
+      padding: 28px;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hero-card h2 {
+      margin: 0;
+      font-size: 1.35rem;
+    }
+
+    .hero-card p {
+      color: rgba(255,255,255,0.9);
+      line-height: 1.75;
+      margin-top: 16px;
+    }
+
+    .hero-card-small {
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero-card-small div {
+      background: rgba(255,255,255,0.12);
+      padding: 16px;
+      border-radius: 20px;
+    }
+
+    .hero-card-small strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+
+    .prompt-area {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 24px;
+      padding: 24px;
+      background: white;
+      display: grid;
+      gap: 16px;
+    }
+
+    .prompt-area textarea {
+      width: 100%;
+      min-height: 100px;
+      border-radius: 18px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      padding: 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .prompt-area button {
+      width: fit-content;
+      border: none;
+      background: var(--accent);
+      color: white;
+      padding: 12px 18px;
+      border-radius: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .pane {
+      display: grid;
+      gap: 20px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 24px;
+      border: 1px solid rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+    }
+
+    .panel-header {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .video-panel {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .video-screen {
+      border-radius: 24px;
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      min-height: 320px;
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      color: white;
+      text-align: center;
+    }
+
+    .video-screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(79, 110, 247, 0.35), transparent 35%),
+                  radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.25), transparent 22%);
+      pointer-events: none;
+    }
+
+    .video-screen .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(80px, 160px));
+      gap: 18px;
+      z-index: 1;
+    }
+
+    .video-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.12);
+      display: grid;
+      place-items: center;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.16);
+    }
+
+    .video-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .video-actions button {
+      flex: 1;
+      min-width: 150px;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .video-actions button:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-call { background: #10b981; color: white; }
+    .btn-end { background: #ef4444; color: white; }
+    .btn-message { background: #4f6ef7; color: white; }
+
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 560px;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+      overflow-y: auto;
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 16px 18px;
+      border-radius: 24px;
+      line-height: 1.6;
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .message.sent {
+      background: #dcf5ff;
+      justify-self: end;
+      align-self: flex-end;
+    }
+
+    .message.received {
+      background: #f7f9ff;
+      justify-self: start;
+      align-self: flex-start;
+    }
+
+    .message small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .chat-input-row {
+      border-top: 1px solid rgba(15, 23, 42, 0.06);
+      padding: 18px 24px;
+      display: grid;
+      gap: 12px;
+      background: white;
+    }
+
+    .chat-input-row textarea {
+      width: 100%;
+      min-height: 92px;
+      border-radius: 20px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      padding: 18px;
+      font-family: inherit;
+      resize: vertical;
+      font-size: 0.96rem;
+    }
+
+    .chat-input-row button {
+      width: fit-content;
+      border: none;
+      border-radius: 18px;
+      padding: 14px 20px;
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .hint {
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 980px) {
+      .card { grid-template-columns: 1fr; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-card { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <article class="card">
+      <aside class="sidebar">
+        <div class="logo"><span class="logo-dot"></span>FriendConnect</div>
+        <div>
+          <div class="section-title">Your friends</div>
+          <ul class="friend-list" id="friendList">
+            <li class="friend-item" data-name="Aisha" onclick="selectFriend(event)">
+              <div class="friend-details">
+                <div class="avatar">A</div>
+                <div class="friend-meta"><strong>Aisha</strong><span>Online</span></div>
+              </div>
+              <button class="cta-button" type="button">Chat</button>
+            </li>
+            <li class="friend-item" data-name="Rohit" onclick="selectFriend(event)">
+              <div class="friend-details">
+                <div class="avatar">R</div>
+                <div class="friend-meta"><strong>Rohit</strong><span>Available</span></div>
+              </div>
+              <button class="cta-button" type="button">Video</button>
+            </li>
+            <li class="friend-item" data-name="Nina" onclick="selectFriend(event)">
+              <div class="friend-details">
+                <div class="avatar">N</div>
+                <div class="friend-meta"><strong>Nina</strong><span>Typing...</span></div>
+              </div>
+              <button class="cta-button" type="button">Prompt</button>
+            </li>
+          </ul>
+        </div>
+        <div class="prompt-area">
+          <div class="section-title">Add a friend</div>
+          <div style="display: grid; gap: 10px;">
+            <input id="newFriendName" type="text" placeholder="Friend name" style="border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 16px; padding: 14px; font-size: 0.95rem; width: 100%;" />
+            <button type="button" onclick="addFriend()">Add friend</button>
+          </div>
+        </div>
+        </div>
+        <div class="prompt-area">
+          <div class="section-title">Start a friendly prompt</div>
+          <textarea id="promptInput">Hey! Want to catch up with a quick video call and share what’s new?</textarea>
+          <button type="button" onclick="fillPrompt()">Use prompt in chat</button>
+        </div>
+      </aside>
+
+      <section class="main">
+        <section class="hero">
+          <div class="hero-copy">
+            <h1>Video calls and instant messages built for friends.</h1>
+            <p>FriendConnect gives you a friendly interface to chat, send simple messages and prepare a quick call invitation. It’s made to keep conversations easy and fun.</p>
+            <p class="hint">Select a friend from the left, type your message, and press send. Use the prompt area to add a friendly opening line or link for a video call.</p>
+          </div>
+          <div class="hero-card">
+            <div>
+              <h2>Friendly tools</h2>
+              <p>Start a call, share updates, and send a prompt that makes connecting simple. The interface is ready for you and your friend.</p>
+            </div>
+            <div class="hero-card-small">
+              <div><strong>Instant chat</strong> Send messages quickly and keep the conversation moving.</div>
+              <div><strong>Video call</strong> Use the built-in button to simulate a friendly call screen.</div>
+              <div><strong>Easy prompt</strong> Share a quick opener with one click.</div>
+            </div>
+          </div>
+        </section>
+
+        <div class="pane">
+          <div class="panel video-panel">
+            <div class="panel-header"><h3>Video call preview</h3><span id="activeFriendLabel">Select a friend</span></div>
+            <div class="video-screen" id="videoScreen">
+              <div>
+                <div class="avatar-grid">
+                  <div class="video-avatar">You</div>
+                  <div class="video-avatar">Friend</div>
+                </div>
+                <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to simulate a video invitation.</p>
+              </div>
+            </div>
+            <div class="video-actions">
+              <button class="btn-call" type="button" onclick="showVideoCall()">Start Call</button>
+              <button class="btn-message" type="button" onclick="scrollToChat()">Send Message</button>
+              <button class="btn-end" type="button" onclick="endCall()">End Call</button>
+            </div>
+          </div>
+
+          <div class="panel chat-panel">
+            <div class="panel-header"><h3>Message exchange</h3><span>Chat with your friend instantly</span></div>
+            <div class="messages" id="messageList">
+              <div class="message received"><strong>Friend:</strong> Hi! Are you free for a quick chat later?<small>10:12 AM</small></div>
+              <div class="message sent"><strong>You:</strong> Yes, let's jump on a video call in 10 minutes.<small>10:13 AM</small></div>
+            </div>
+            <div class="chat-input-row">
+              <textarea id="messageInput" placeholder="Type your message here..."></textarea>
+              <button type="button" onclick="sendMessage()">Send message</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script>
+    const friendList = document.getElementById('friendList');
+    const messageList = document.getElementById('messageList');
+    const activeFriendLabel = document.getElementById('activeFriendLabel');
+    const messageInput = document.getElementById('messageInput');
+    const promptInput = document.getElementById('promptInput');
+    const videoScreen = document.getElementById('videoScreen');
+    let activeFriend = '';
+
+    function selectFriend(event) {
+      const item = event.currentTarget;
+      activeFriend = item.dataset.name || 'Friend';
+      activeFriendLabel.textContent = activeFriend;
+      highlightFriend(item);
+      addSystemMessage(`You selected ${activeFriend}. Send a friendly message or start a video call.`);
+    }
+
+    function highlightFriend(selectedItem) {
+      const items = friendList.querySelectorAll('.friend-item');
+      items.forEach(item => item.style.background = '#fff');
+      selectedItem.style.background = 'rgba(79, 110, 247, 0.08)';
+    }
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+      appendMessage(text, 'sent');
+      messageInput.value = '';
+      setTimeout(() => {
+        appendMessage('That sounds great! Let me know when you are ready.', 'received');
+      }, 1000);
+    }
+
+    function appendMessage(text, type) {
+      const wrapper = document.createElement('div');
+      wrapper.className = `message ${type}`;
+      wrapper.innerHTML = `<strong>${type === 'sent' ? 'You' : activeFriend || 'Friend'}:</strong> ${escapeHtml(text)}<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>`;
+      messageList.appendChild(wrapper);
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    function addFriend() {
+      const input = document.getElementById("newFriendName");
+      const name = input.value.trim();
+      if (!name) {
+        alert("Please enter a friend name.");
+        return;
+      }
+      const friendItem = document.createElement("li");
+      friendItem.className = "friend-item";
+      friendItem.dataset.name = name;
+      friendItem.onclick = selectFriend;
+      friendItem.innerHTML = `
+        <div class="friend-details">
+          <div class="avatar">${escapeHtml(name.charAt(0).toUpperCase())}</div>
+          <div class="friend-meta"><strong>${escapeHtml(name)}</strong><span>Online</span></div>
+        </div>
+        <button class="cta-button" type="button">Chat</button>
+      `;
+      friendList.appendChild(friendItem);
+      input.value = "";
+      input.focus();
+      addSystemMessage(`${escapeHtml(name)} was added to your friend list.`);
+    }
+    function fillPrompt() {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+      messageInput.value = prompt;
+      messageInput.focus();
+    }
+
+    function showVideoCall() {
+      if (!activeFriend) {
+        alert('Select a friend first to start a video call.');
+        return;
+      }
+      videoScreen.innerHTML = `
+        <div>
+          <div class="avatar-grid">
+            <div class="video-avatar">You</div>
+            <div class="video-avatar">${escapeHtml(activeFriend)}</div>
+          </div>
+          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">Calling ${escapeHtml(activeFriend)}... <strong>Ready for a friendly video catch-up!</strong></p>
+        </div>`;
+    }
+
+    function endCall() {
+      videoScreen.innerHTML = `
+        <div>
+          <div class="avatar-grid">
+            <div class="video-avatar">You</div>
+            <div class="video-avatar">Friend</div>
+          </div>
+          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">The call has ended. Use the chat below to stay connected, or start another call anytime.</p>
+        </div>`;
+    }
+
+    function scrollToChat() {
+      document.querySelector('.chat-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function addSystemMessage(text) {
+      const hint = document.createElement('div');
+      hint.className = 'message received';
+      hint.innerHTML = `<strong>System:</strong> ${escapeHtml(text)}<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>`;
+      messageList.appendChild(hint);
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, function(match) {
+        return {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[match];
+      });
+    }
+  </script>
+</body>
+</html>
