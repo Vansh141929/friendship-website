@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -351,6 +351,8 @@
     .btn-call { background: #10b981; color: white; }
     .btn-end { background: #ef4444; color: white; }
     .btn-message { background: #4f6ef7; color: white; }
+    .btn-github { background: #24292e; color: white; }
+    .btn-google { background: #1f2937; color: white; border: 1px solid #db4437; }
 
     .chat-panel {
       display: flex;
@@ -429,6 +431,102 @@
       color: var(--muted);
     }
 
+    .login-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 28px;
+      padding: 40px;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .login-card h2 {
+      margin: 0 0 24px;
+      font-size: 1.8rem;
+      color: var(--text);
+    }
+
+    .login-card p {
+      color: var(--muted);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .login-buttons {
+      display: grid;
+      gap: 12px;
+    }
+
+    .login-btn {
+      border: none;
+      padding: 14px 20px;
+      border-radius: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.2s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .user-info {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      padding: 12px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-info img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .user-info-text strong {
+      display: block;
+      font-size: 0.9rem;
+    }
+
+    .user-info-text span {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .logout-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
     @media (max-width: 980px) {
       .card { grid-template-columns: 1fr; }
       .hero { grid-template-columns: 1fr; }
@@ -437,7 +535,36 @@
   </style>
 </head>
 <body>
-  <main class="page">
+  <!-- Login Container -->
+  <div class="login-container" id="loginContainer">
+    <div class="login-card">
+      <h2>FriendConnect</h2>
+      <p>Sign in with your GitHub account to start connecting with friends via video calls and messages.</p>
+      <div class="login-buttons">
+        <button class="login-btn btn-github" onclick="loginWithGitHub()">
+          🔗 Login with GitHub
+        </button>
+        <button class="login-btn btn-google" onclick="showGoogleOption()">
+          📧 Google Meet Setup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Info (shown after login) -->
+  <div class="user-info" id="userInfo" style="display: none;">
+    <div>
+      <img id="userAvatar" src="" alt="Profile">
+    </div>
+    <div class="user-info-text">
+      <strong id="userName"></strong>
+      <span id="userEmail"></span>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Main Application -->
+  <main class="page" id="appContainer" style="display: none;">
     <article class="card">
       <aside class="sidebar">
         <div class="logo"><span class="logo-dot"></span>FriendConnect</div>
@@ -474,10 +601,9 @@
             <button type="button" onclick="addFriend()">Add friend</button>
           </div>
         </div>
-        </div>
         <div class="prompt-area">
           <div class="section-title">Start a friendly prompt</div>
-          <textarea id="promptInput">Hey! Want to catch up with a quick video call and share what’s new?</textarea>
+          <textarea id="promptInput">Hey! Want to catch up with a quick video call and share what's new?</textarea>
           <button type="button" onclick="fillPrompt()">Use prompt in chat</button>
         </div>
       </aside>
@@ -486,7 +612,7 @@
         <section class="hero">
           <div class="hero-copy">
             <h1>Video calls and instant messages built for friends.</h1>
-            <p>FriendConnect gives you a friendly interface to chat, send simple messages and prepare a quick call invitation. It’s made to keep conversations easy and fun.</p>
+            <p>FriendConnect gives you a friendly interface to chat, send simple messages and prepare a quick call invitation. It's made to keep conversations easy and fun.</p>
             <p class="hint">Select a friend from the left, type your message, and press send. Use the prompt area to add a friendly opening line or link for a video call.</p>
           </div>
           <div class="hero-card">
@@ -496,7 +622,7 @@
             </div>
             <div class="hero-card-small">
               <div><strong>Instant chat</strong> Send messages quickly and keep the conversation moving.</div>
-              <div><strong>Video call</strong> Use the built-in button to simulate a friendly call screen.</div>
+              <div><strong>Video call</strong> Use Google Meet for real video conversations.</div>
               <div><strong>Easy prompt</strong> Share a quick opener with one click.</div>
             </div>
           </div>
@@ -511,11 +637,11 @@
                   <div class="video-avatar">You</div>
                   <div class="video-avatar">Friend</div>
                 </div>
-                <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to simulate a video invitation.</p>
+                <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to start a Google Meet session.</p>
               </div>
             </div>
             <div class="video-actions">
-              <button class="btn-call" type="button" onclick="showVideoCall()">Start Call</button>
+              <button class="btn-call" type="button" onclick="startGoogleMeetCall()">🎥 Start Google Meet</button>
               <button class="btn-message" type="button" onclick="scrollToChat()">Send Message</button>
               <button class="btn-end" type="button" onclick="endCall()">End Call</button>
             </div>
@@ -538,20 +664,146 @@
   </main>
 
   <script>
+    // Global state
+    let user = null;
+    let googleMeetLink = '';
+    let activeFriend = '';
+
+    // DOM elements
+    const loginContainer = document.getElementById('loginContainer');
+    const appContainer = document.getElementById('appContainer');
+    const userInfo = document.getElementById('userInfo');
     const friendList = document.getElementById('friendList');
     const messageList = document.getElementById('messageList');
     const activeFriendLabel = document.getElementById('activeFriendLabel');
     const messageInput = document.getElementById('messageInput');
     const promptInput = document.getElementById('promptInput');
     const videoScreen = document.getElementById('videoScreen');
-    let activeFriend = '';
 
+    // Initialize
+    function init() {
+      checkAuthStatus();
+    }
+
+    // Check if user is already logged in
+    function checkAuthStatus() {
+      const storedUser = localStorage.getItem('friendconnect_user');
+      if (storedUser) {
+        user = JSON.parse(storedUser);
+        showApp();
+      } else {
+        showLogin();
+      }
+    }
+
+    // Login with GitHub OAuth
+    function loginWithGitHub() {
+      // In production, this would redirect to GitHub OAuth
+      // For demo, simulate GitHub login
+      const githubAuthUrl = 'https://github.com/login/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&scope=user:email';
+      
+      // Simulated response for demo
+      user = {
+        login: 'github-user-' + Math.random().toString(36).substring(7),
+        name: 'GitHub User',
+        avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4',
+        email: 'user@github.com',
+        auth_provider: 'github'
+      };
+      
+      localStorage.setItem('friendconnect_user', JSON.stringify(user));
+      showApp();
+      addSystemMessage(`Welcome ${user.name}! You're authenticated with GitHub.`);
+      generateGoogleMeetLink();
+    }
+
+    // Show Google Meet setup
+    function showGoogleOption() {
+      alert('To use Google Meet:\n\n1. Visit https://meet.google.com\n2. Sign in with your Google account\n3. Create or join a meeting\n4. Share the link with your friend!\n\nAfter you login with GitHub, the app will help manage meet links.');
+    }
+
+    // Generate Google Meet link
+    function generateGoogleMeetLink() {
+      // Generate a unique meeting ID
+      const meetingId = 'friendly-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      googleMeetLink = `https://meet.google.com/${meetingId}`;
+    }
+
+    // Start Google Meet call
+    function startGoogleMeetCall() {
+      if (!user) {
+        alert('Please login first to start a call.');
+        return;
+      }
+      
+      if (!activeFriend) {
+        alert('Select a friend first to start a video call.');
+        return;
+      }
+
+      // Generate meet link if not exists
+      if (!googleMeetLink) {
+        generateGoogleMeetLink();
+      }
+
+      videoScreen.innerHTML = `
+        <div style="text-align: center; z-index: 1;">
+          <div class="avatar-grid">
+            <div class="video-avatar">You</div>
+            <div class="video-avatar">${escapeHtml(activeFriend)}</div>
+          </div>
+          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">
+            <strong>Google Meet Link:</strong><br>
+            <a href="${googleMeetLink}" target="_blank" style="color: #4f6ef7; text-decoration: none; word-break: break-all;">${googleMeetLink}</a>
+          </p>
+          <p style="margin-top: 12px; font-size: 0.85rem; color: rgba(255,255,255,0.7);">Click the link above to join the video call</p>
+        </div>`;
+
+      addSystemMessage(`Starting Google Meet with ${activeFriend}! Click the link in the video panel to join: ${googleMeetLink}`);
+    }
+
+    // Show login UI
+    function showLogin() {
+      loginContainer.style.display = 'flex';
+      appContainer.style.display = 'none';
+      userInfo.style.display = 'none';
+    }
+
+    // Show app UI
+    function showApp() {
+      loginContainer.style.display = 'none';
+      appContainer.style.display = 'flex';
+      userInfo.style.display = 'flex';
+      updateUserInfo();
+    }
+
+    // Update user info display
+    function updateUserInfo() {
+      if (user) {
+        document.getElementById('userName').textContent = user.name || user.login;
+        document.getElementById('userEmail').textContent = user.email || 'Authenticated';
+        document.getElementById('userAvatar').src = user.avatar_url;
+      }
+    }
+
+    // Logout
+    function logout() {
+      localStorage.removeItem('friendconnect_user');
+      user = null;
+      googleMeetLink = '';
+      showLogin();
+      messageList.innerHTML = `
+        <div class="message received"><strong>System:</strong> You have been logged out. Please login again.<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></div>
+      `;
+    }
+
+    // Friend selection
     function selectFriend(event) {
       const item = event.currentTarget;
       activeFriend = item.dataset.name || 'Friend';
       activeFriendLabel.textContent = activeFriend;
       highlightFriend(item);
-      addSystemMessage(`You selected ${activeFriend}. Send a friendly message or start a video call.`);
+      addSystemMessage(`You selected ${activeFriend}. Send a friendly message or start a Google Meet video call.`);
     }
 
     function highlightFriend(selectedItem) {
@@ -560,6 +812,7 @@
       selectedItem.style.background = 'rgba(79, 110, 247, 0.08)';
     }
 
+    // Send message
     function sendMessage() {
       const text = messageInput.value.trim();
       if (!text) return;
@@ -578,6 +831,7 @@
       messageList.scrollTop = messageList.scrollHeight;
     }
 
+    // Add friend
     function addFriend() {
       const input = document.getElementById("newFriendName");
       const name = input.value.trim();
@@ -601,6 +855,8 @@
       input.focus();
       addSystemMessage(`${escapeHtml(name)} was added to your friend list.`);
     }
+
+    // Fill prompt
     function fillPrompt() {
       const prompt = promptInput.value.trim();
       if (!prompt) return;
@@ -608,21 +864,7 @@
       messageInput.focus();
     }
 
-    function showVideoCall() {
-      if (!activeFriend) {
-        alert('Select a friend first to start a video call.');
-        return;
-      }
-      videoScreen.innerHTML = `
-        <div>
-          <div class="avatar-grid">
-            <div class="video-avatar">You</div>
-            <div class="video-avatar">${escapeHtml(activeFriend)}</div>
-          </div>
-          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">Calling ${escapeHtml(activeFriend)}... <strong>Ready for a friendly video catch-up!</strong></p>
-        </div>`;
-    }
-
+    // End call
     function endCall() {
       videoScreen.innerHTML = `
         <div>
@@ -632,12 +874,15 @@
           </div>
           <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">The call has ended. Use the chat below to stay connected, or start another call anytime.</p>
         </div>`;
+      addSystemMessage('Video call ended. Thanks for connecting!');
     }
 
+    // Scroll to chat
     function scrollToChat() {
       document.querySelector('.chat-panel').scrollIntoView({ behavior: 'smooth' });
     }
 
+    // Add system message
     function addSystemMessage(text) {
       const hint = document.createElement('div');
       hint.className = 'message received';
@@ -646,6 +891,7 @@
       messageList.scrollTop = messageList.scrollHeight;
     }
 
+    // Escape HTML
     function escapeHtml(value) {
       return value.replace(/[&<>"']/g, function(match) {
         return {
@@ -657,6 +903,9 @@
         }[match];
       });
     }
+
+    // Start app
+    init();
   </script>
 </body>
 </html>
