@@ -282,6 +282,14 @@
       resize: vertical;
     }
 
+    .prompt-area input {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      padding: 14px;
+      font-size: 0.95rem;
+    }
+
     .prompt-area button {
       width: fit-content;
       border: none;
@@ -694,24 +702,24 @@
         <div>
           <div class="section-title">Your friends</div>
           <ul class="friend-list" id="friendList">
-            <li class="friend-item" data-name="Aisha" onclick="selectFriend(event)">
+            <li class="friend-item" data-name="Aisha" data-email="aisha@email.com" onclick="selectFriend(event)">
               <div class="friend-details">
                 <div class="avatar">A</div>
-                <div class="friend-meta"><strong>Aisha</strong><span>Online</span></div>
+                <div class="friend-meta"><strong>Aisha</strong><span>aisha@email.com</span></div>
               </div>
               <button class="cta-button" type="button">Chat</button>
             </li>
-            <li class="friend-item" data-name="Rohit" onclick="selectFriend(event)">
+            <li class="friend-item" data-name="Rohit" data-email="rohit@email.com" onclick="selectFriend(event)">
               <div class="friend-details">
                 <div class="avatar">R</div>
-                <div class="friend-meta"><strong>Rohit</strong><span>Available</span></div>
+                <div class="friend-meta"><strong>Rohit</strong><span>rohit@email.com</span></div>
               </div>
               <button class="cta-button" type="button">Video</button>
             </li>
-            <li class="friend-item" data-name="Nina" onclick="selectFriend(event)">
+            <li class="friend-item" data-name="Nina" data-email="nina@email.com" onclick="selectFriend(event)">
               <div class="friend-details">
                 <div class="avatar">N</div>
-                <div class="friend-meta"><strong>Nina</strong><span>Typing...</span></div>
+                <div class="friend-meta"><strong>Nina</strong><span>nina@email.com</span></div>
               </div>
               <button class="cta-button" type="button">Prompt</button>
             </li>
@@ -742,10 +750,11 @@
         </div>
 
         <div class="prompt-area">
-          <div class="section-title">Add a friend</div>
+          <div class="section-title">Add a member</div>
           <div style="display: grid; gap: 10px;">
-            <input id="newFriendName" type="text" placeholder="Friend name" style="border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 16px; padding: 14px; font-size: 0.95rem; width: 100%;">
-            <button type="button" onclick="addFriend()">Add friend</button>
+            <input id="newFriendName" type="text" placeholder="Member name">
+            <input id="newFriendEmail" type="email" placeholder="Email address">
+            <button type="button" onclick="addFriend()">Add member</button>
           </div>
         </div>
         <div class="prompt-area">
@@ -785,7 +794,7 @@
                   <div class="video-avatar">You</div>
                   <div class="video-avatar">Friend</div>
                 </div>
-                <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to start a Google Meet call.</p>
+                <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to start a Google Meet call</p>
               </div>
             </div>
             <div class="video-actions">
@@ -1000,62 +1009,78 @@
       addSystemMessage(`You selected ${activeFriend}. Send a friendly message or start a Google Meet video call.`);
     }
 
-    function highlightFriend(selectedItem) {
-      const items = friendList.querySelectorAll('.friend-item');
-      items.forEach(item => item.style.background = '#fff');
-      selectedItem.style.background = 'rgba(79, 110, 247, 0.08)';
+    // Highlight friend
+    function highlightFriend(item) {
+      document.querySelectorAll('.friend-item').forEach(el => {
+        el.style.background = 'white';
+        el.style.borderColor = 'rgba(15, 23, 42, 0.08)';
+      });
+      item.style.background = 'var(--primary-soft)';
+      item.style.borderColor = 'var(--primary)';
+    }
+
+    // Add new friend
+    function addFriend() {
+      const nameInput = document.getElementById('newFriendName');
+      const emailInput = document.getElementById('newFriendEmail');
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+
+      if (!name) {
+        alert('Please enter a member name.');
+        return;
+      }
+
+      if (!email) {
+        alert('Please enter an email address.');
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address.');
+        return;
+      }
+
+      const avatar = name.charAt(0).toUpperCase();
+      const li = document.createElement('li');
+      li.className = 'friend-item';
+      li.dataset.name = name;
+      li.dataset.email = email;
+      li.setAttribute('onclick', 'selectFriend(event)');
+      li.innerHTML = `
+        <div class="friend-details">
+          <div class="avatar">${avatar}</div>
+          <div class="friend-meta"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(email)}</span></div>
+        </div>
+        <button class="cta-button" type="button">Chat</button>
+      `;
+
+      friendList.appendChild(li);
+      nameInput.value = '';
+      emailInput.value = '';
+      addSystemMessage(`✅ ${name} (${email}) has been added to your friends!`);
     }
 
     // Send message
     function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text) return;
-      appendMessage(text, 'sent');
-      messageInput.value = '';
-      setTimeout(() => {
-        appendMessage('That sounds great! Let me know when you are ready.', 'received');
-      }, 1000);
-    }
+      const message = messageInput.value.trim();
+      if (!message) return;
 
-    function appendMessage(text, type) {
-      const wrapper = document.createElement('div');
-      wrapper.className = `message ${type}`;
-      wrapper.innerHTML = `<strong>${type === 'sent' ? 'You' : activeFriend || 'Friend'}:</strong> ${escapeHtml(text)}<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>`;
-      messageList.appendChild(wrapper);
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const div = document.createElement('div');
+      div.className = 'message sent';
+      div.innerHTML = `<strong>You:</strong> ${escapeHtml(message)}<small>${time}</small>`;
+
+      messageList.appendChild(div);
+      messageInput.value = '';
       messageList.scrollTop = messageList.scrollHeight;
     }
 
-    // Add friend
-    function addFriend() {
-      const input = document.getElementById("newFriendName");
-      const name = input.value.trim();
-      if (!name) {
-        alert("Please enter a friend name.");
-        return;
-      }
-      const friendItem = document.createElement("li");
-      friendItem.className = "friend-item";
-      friendItem.dataset.name = name;
-      friendItem.onclick = selectFriend;
-      friendItem.innerHTML = `
-        <div class="friend-details">
-          <div class="avatar">${escapeHtml(name.charAt(0).toUpperCase())}</div>
-          <div class="friend-meta"><strong>${escapeHtml(name)}</strong><span>Online</span></div>
-        </div>
-        <button class="cta-button" type="button">Chat</button>
-      `;
-      friendList.appendChild(friendItem);
-      input.value = "";
-      input.focus();
-      addSystemMessage(`${escapeHtml(name)} was added to your friend list.`);
-    }
-
-    // Fill prompt
-    function fillPrompt() {
-      const prompt = promptInput.value.trim();
-      if (!prompt) return;
-      messageInput.value = prompt;
-      messageInput.focus();
+    // Scroll to chat
+    function scrollToChat() {
+      document.querySelector('.chat-panel').scrollIntoView({ behavior: 'smooth' });
     }
 
     // End call
@@ -1066,36 +1091,39 @@
             <div class="video-avatar">You</div>
             <div class="video-avatar">Friend</div>
           </div>
-          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">The call has ended. Use the chat below to stay connected, or start another call anytime.</p>
+          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to start a Google Meet call</p>
         </div>`;
-      addSystemMessage('Video call ended. Thanks for connecting!');
+      googleMeetLink = '';
+      addSystemMessage('📞 Call ended.');
     }
 
-    // Scroll to chat
-    function scrollToChat() {
-      document.querySelector('.chat-panel').scrollIntoView({ behavior: 'smooth' });
+    // Fill prompt
+    function fillPrompt() {
+      const prompt = promptInput.value;
+      messageInput.value = prompt;
+      scrollToChat();
     }
 
     // Add system message
-    function addSystemMessage(text) {
-      const hint = document.createElement('div');
-      hint.className = 'message received';
-      hint.innerHTML = `<strong>System:</strong> ${escapeHtml(text)}<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>`;
-      messageList.appendChild(hint);
+    function addSystemMessage(message) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const div = document.createElement('div');
+      div.className = 'message received';
+      div.innerHTML = `<strong>System:</strong> ${message}<small>${time}</small>`;
+      messageList.appendChild(div);
       messageList.scrollTop = messageList.scrollHeight;
     }
 
     // Escape HTML
-    function escapeHtml(value) {
-      return value.replace(/[&<>"']/g, function(match) {
-        return {
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#39;'
-        }[match];
-      });
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, m => map[m]);
     }
 
     // APP FUNCTIONS
@@ -1187,7 +1215,6 @@
 
     // Memory Game
     function getMemoryGame() {
-      const cards = ['🎮', '🎮', '🎨', '🎨', '🎭', '🎭', '🎪', '🎪', '🎯', '🎯', '🎲', '🎲', '🎸', '🎸', '🎺', '🎺'];
       return `
         <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
           <h3>Memory Game</h3>
