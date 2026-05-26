@@ -351,7 +351,6 @@
     .btn-call { background: #10b981; color: white; }
     .btn-end { background: #ef4444; color: white; }
     .btn-message { background: #4f6ef7; color: white; }
-    .btn-github { background: #24292e; color: white; }
     .btn-google { background: #1f2937; color: white; border: 1px solid #db4437; }
 
     .chat-panel {
@@ -539,11 +538,8 @@
   <div class="login-container" id="loginContainer">
     <div class="login-card">
       <h2>FriendConnect</h2>
-      <p>Sign in with your GitHub account to start connecting with friends via video calls and messages.</p>
+      <p>Sign in to start connecting with friends via video calls and messages.</p>
       <div class="login-buttons">
-        <button class="login-btn btn-github" onclick="loginWithGitHub()">
-          🔗 Login with GitHub
-        </button>
         <button class="login-btn btn-google" onclick="showGoogleOption()">
           📧 Google Meet Setup
         </button>
@@ -637,7 +633,7 @@
                   <div class="video-avatar">You</div>
                   <div class="video-avatar">Friend</div>
                 </div>
-                <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to start a Google Meet session.</p>
+                <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to start a Google Meet call.</p>
               </div>
             </div>
             <div class="video-actions">
@@ -664,10 +660,6 @@
   </main>
 
   <script>
-    // GitHub OAuth Configuration
-    const GITHUB_CLIENT_ID = 'Ov23liiCMEPAfevLEMTM';
-    const REDIRECT_URI = window.location.origin + window.location.pathname + '?code=';
-    
     // Global state
     let user = null;
     let googleMeetLink = '';
@@ -687,7 +679,6 @@
     // Initialize
     function init() {
       checkAuthStatus();
-      handleOAuthCallback();
     }
 
     // Check if user is already logged in
@@ -701,61 +692,30 @@
       }
     }
 
-    // Handle OAuth callback
-    function handleOAuthCallback() {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
-      
-      if (code) {
-        exchangeCodeForToken(code);
+    // Show Google Meet setup
+    function showGoogleOption() {
+      // Create a simple login form for manual user entry
+      const name = prompt("Enter your name to continue:");
+      if (name && name.trim()) {
+        simulateUserLogin(name.trim());
       }
     }
 
-    // Exchange auth code for token and user info
-    async function exchangeCodeForToken(code) {
-      try {
-        // In production, you would send this to your backend server
-        // For now, we'll show a message about the OAuth flow
-        addSystemMessage('GitHub authentication code received. Please complete the OAuth setup on your backend server.');
-        
-        // Simulated user login for demo
-        simulateGitHubLogin();
-      } catch (error) {
-        console.error('OAuth error:', error);
-        alert('Authentication failed. Please try again.');
-      }
-    }
-
-    // Login with GitHub OAuth
-    function loginWithGitHub() {
-      // Redirect to GitHub OAuth authorization
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(window.location.href)}&scope=user:email&state=${Math.random().toString(36).substring(7)}`;
-      
-      // For demo purposes, simulate login
-      simulateGitHubLogin();
-    }
-
-    // Simulate GitHub login (for demo)
-    function simulateGitHubLogin() {
-      // In production, this would be replaced with real OAuth data from GitHub API
+    // Simulate user login (for demo)
+    function simulateUserLogin(name) {
+      // Create a basic user object
       user = {
-        login: 'github-user-' + Math.random().toString(36).substring(7),
-        name: 'GitHub User',
+        login: name.toLowerCase().replace(/\s+/g, '-'),
+        name: name,
         avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4',
-        email: 'user@github.com',
-        auth_provider: 'github',
+        email: name.toLowerCase().replace(/\s+/g, '.') + '@example.com',
         id: Math.floor(Math.random() * 1000000)
       };
       
       localStorage.setItem('friendconnect_user', JSON.stringify(user));
       showApp();
-      addSystemMessage(`Welcome ${user.name}! You're authenticated with GitHub. Ready to start video calls!`);
+      addSystemMessage(`Welcome ${user.name}! Ready to start video calls!`);
       generateGoogleMeetLink();
-    }
-
-    // Show Google Meet setup
-    function showGoogleOption() {
-      alert('To use Google Meet:\n\n1. Visit https://meet.google.com\n2. Sign in with your Google account\n3. Create or join a meeting\n4. Share the link with your friend!\n\nAfter you login with GitHub, the app will help manage meet links.');
     }
 
     // Generate Google Meet link
