@@ -54,6 +54,8 @@
       display: flex;
       flex-direction: column;
       gap: 24px;
+      overflow-y: auto;
+      max-height: 720px;
     }
 
     .logo {
@@ -153,6 +155,43 @@
 
     .cta-button:hover {
       background: #3a55d1;
+    }
+
+    .apps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .app-card {
+      background: white;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(79, 110, 247, 0.15);
+      border-color: var(--primary);
+    }
+
+    .app-icon {
+      font-size: 1.8rem;
+    }
+
+    .app-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text);
     }
 
     .main {
@@ -527,6 +566,76 @@
       font-size: 0.85rem;
     }
 
+    /* App Modal Styles */
+    .app-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .app-modal.active {
+      display: flex;
+    }
+
+    .app-modal-content {
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .app-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .app-modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover {
+      color: var(--text);
+    }
+
+    .app-content {
+      padding: 20px;
+      background: #f8fbff;
+      border-radius: 16px;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
     #google-signin-button {
       display: flex !important;
       justify-content: center;
@@ -536,6 +645,7 @@
       .card { grid-template-columns: 1fr; }
       .hero { grid-template-columns: 1fr; }
       .hero-card { min-height: auto; }
+      .sidebar { max-height: none; }
     }
   </style>
 </head>
@@ -561,6 +671,19 @@
       <span id="userEmail"></span>
     </div>
     <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- App Modal -->
+  <div class="app-modal" id="appModal">
+    <div class="app-modal-content">
+      <div class="app-modal-header">
+        <h2 id="appModalTitle">App</h2>
+        <button class="close-btn" onclick="closeAppModal()">✕</button>
+      </div>
+      <div class="app-content" id="appContent">
+        Loading app...
+      </div>
+    </div>
   </div>
 
   <!-- Main Application -->
@@ -594,10 +717,34 @@
             </li>
           </ul>
         </div>
+        
+        <!-- Apps & Games Section -->
+        <div>
+          <div class="section-title">Apps & Games</div>
+          <div class="apps-grid">
+            <div class="app-card" onclick="openApp('Tic Tac Toe', 'ticTacToe')">
+              <div class="app-icon">⭕</div>
+              <div class="app-name">Tic Tac Toe</div>
+            </div>
+            <div class="app-card" onclick="openApp('Memory Game', 'memoryGame')">
+              <div class="app-icon">🧠</div>
+              <div class="app-name">Memory</div>
+            </div>
+            <div class="app-card" onclick="openApp('Hangman', 'hangman')">
+              <div class="app-icon">🎯</div>
+              <div class="app-name">Hangman</div>
+            </div>
+            <div class="app-card" onclick="openApp('Drawing', 'drawing')">
+              <div class="app-icon">✏️</div>
+              <div class="app-name">Drawing</div>
+            </div>
+          </div>
+        </div>
+
         <div class="prompt-area">
           <div class="section-title">Add a friend</div>
           <div style="display: grid; gap: 10px;">
-            <input id="newFriendName" type="text" placeholder="Friend name" style="border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 16px; padding: 14px; font-size: 0.95rem; width: 100%;" />
+            <input id="newFriendName" type="text" placeholder="Friend name" style="border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 16px; padding: 14px; font-size: 0.95rem; width: 100%;">
             <button type="button" onclick="addFriend()">Add friend</button>
           </div>
         </div>
@@ -624,6 +771,7 @@
               <div><strong>Instant chat</strong> Send messages quickly and keep the conversation moving.</div>
               <div><strong>Video call</strong> Use Google Meet for real video conversations.</div>
               <div><strong>Easy prompt</strong> Share a quick opener with one click.</div>
+              <div><strong>Games & Apps</strong> Play games and use apps with friends!</div>
             </div>
           </div>
         </section>
@@ -668,6 +816,27 @@
     let user = null;
     let googleMeetLink = '';
     let activeFriend = '';
+    let currentApp = null;
+
+    // Apps definition
+    const apps = {
+      ticTacToe: {
+        name: 'Tic Tac Toe',
+        getHtml: getTicTacToeGame
+      },
+      memoryGame: {
+        name: 'Memory Game',
+        getHtml: getMemoryGame
+      },
+      hangman: {
+        name: 'Hangman',
+        getHtml: getHangmanGame
+      },
+      drawing: {
+        name: 'Drawing Board',
+        getHtml: getDrawingApp
+      }
+    };
 
     // DOM elements
     const loginContainer = document.getElementById('loginContainer');
@@ -679,11 +848,14 @@
     const messageInput = document.getElementById('messageInput');
     const promptInput = document.getElementById('promptInput');
     const videoScreen = document.getElementById('videoScreen');
+    const appModal = document.getElementById('appModal');
+    const appModalTitle = document.getElementById('appModalTitle');
+    const appContent = document.getElementById('appContent');
 
     // Google Sign-In Configuration
     function initializeGoogleSignIn() {
       google.accounts.id.initialize({
-        client_id: 'YOUR_GOOGLE_CLIENT_ID_HERE', // Replace with your actual Google Client ID
+        client_id: 'YOUR_GOOGLE_CLIENT_ID_HERE',
         callback: handleGoogleSignIn
       });
 
@@ -701,7 +873,6 @@
     // Handle Google Sign-In response
     function handleGoogleSignIn(response) {
       if (response.credential) {
-        // Decode JWT token
         const base64Url = response.credential.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
@@ -710,7 +881,6 @@
 
         const userPayload = JSON.parse(jsonPayload);
 
-        // Create user object from Google data
         user = {
           id: userPayload.sub,
           name: userPayload.name,
@@ -720,7 +890,6 @@
           login: userPayload.email.split('@')[0]
         };
 
-        // Store user in localStorage
         localStorage.setItem('friendconnect_user', JSON.stringify(user));
         showApp();
         addSystemMessage(`Welcome ${user.name}! Logged in with Gmail. Ready to start video calls!`);
@@ -747,7 +916,6 @@
 
     // Generate Google Meet link
     function generateGoogleMeetLink() {
-      // Generate a unique meeting ID
       const meetingId = 'friendly-' + Math.random().toString(36).substring(2, 8).toUpperCase();
       googleMeetLink = `https://meet.google.com/${meetingId}`;
     }
@@ -764,7 +932,6 @@
         return;
       }
 
-      // Generate meet link if not exists
       if (!googleMeetLink) {
         generateGoogleMeetLink();
       }
@@ -817,10 +984,7 @@
       localStorage.removeItem('friendconnect_user');
       user = null;
       googleMeetLink = '';
-      
-      // Sign out from Google
       google.accounts.id.disableAutoSelect();
-      
       showLogin();
       messageList.innerHTML = `
         <div class="message received"><strong>System:</strong> You have been logged out. Please login again.<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></div>
@@ -932,6 +1096,262 @@
           "'": '&#39;'
         }[match];
       });
+    }
+
+    // APP FUNCTIONS
+
+    function openApp(appName, appKey) {
+      if (!user) {
+        alert('Please login first to use apps.');
+        return;
+      }
+      currentApp = appKey;
+      appModalTitle.textContent = appName;
+      const app = apps[appKey];
+      appContent.innerHTML = app.getHtml();
+      appModal.classList.add('active');
+      
+      // Initialize app after rendering
+      if (appKey === 'ticTacToe') initTicTacToe();
+      else if (appKey === 'memoryGame') initMemoryGame();
+      else if (appKey === 'hangman') initHangman();
+      else if (appKey === 'drawing') initDrawing();
+    }
+
+    function closeAppModal() {
+      appModal.classList.remove('active');
+      currentApp = null;
+    }
+
+    // Tic Tac Toe
+    function getTicTacToeGame() {
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+          <h3>Tic Tac Toe</h3>
+          <div id="ticTacToeBoard" style="display: grid; grid-template-columns: repeat(3, 100px); gap: 10px;">
+            ${Array(9).fill(0).map((_, i) => `<button class="tic-cell" onclick="makeMove(${i})" style="width: 100px; height: 100px; font-size: 24px; font-weight: bold; border: 2px solid #4f6ef7; border-radius: 8px; cursor: pointer; background: white;"></button>`).join('')}
+          </div>
+          <div style="text-align: center;">
+            <p id="ticStatus">Player X's Turn</p>
+            <button onclick="resetTicTacToe()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">Reset Game</button>
+          </div>
+        </div>
+      `;
+    }
+
+    let ticTacToeState = { board: Array(9).fill(''), xNext: true, gameOver: false };
+
+    function initTicTacToe() {
+      ticTacToeState = { board: Array(9).fill(''), xNext: true, gameOver: false };
+      updateTicDisplay();
+    }
+
+    function makeMove(index) {
+      if (ticTacToeState.gameOver || ticTacToeState.board[index]) return;
+      ticTacToeState.board[index] = ticTacToeState.xNext ? 'X' : 'O';
+      ticTacToeState.xNext = !ticTacToeState.xNext;
+      updateTicDisplay();
+      checkTicWinner();
+    }
+
+    function updateTicDisplay() {
+      const cells = document.querySelectorAll('.tic-cell');
+      cells.forEach((cell, i) => {
+        cell.textContent = ticTacToeState.board[i];
+        cell.style.color = ticTacToeState.board[i] === 'X' ? '#4f6ef7' : '#ef4444';
+      });
+      if (!ticTacToeState.gameOver) {
+        document.getElementById('ticStatus').textContent = `Player ${ticTacToeState.xNext ? 'X' : 'O'}'s Turn`;
+      }
+    }
+
+    function checkTicWinner() {
+      const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      for (let line of lines) {
+        const [a, b, c] = line;
+        if (ticTacToeState.board[a] && ticTacToeState.board[a] === ticTacToeState.board[b] && ticTacToeState.board[a] === ticTacToeState.board[c]) {
+          ticTacToeState.gameOver = true;
+          document.getElementById('ticStatus').textContent = `🎉 Player ${ticTacToeState.board[a]} Wins!`;
+          return;
+        }
+      }
+      if (ticTacToeState.board.every(cell => cell)) {
+        ticTacToeState.gameOver = true;
+        document.getElementById('ticStatus').textContent = "It's a Draw!";
+      }
+    }
+
+    function resetTicTacToe() {
+      initTicTacToe();
+    }
+
+    // Memory Game
+    function getMemoryGame() {
+      const cards = ['🎮', '🎮', '🎨', '🎨', '🎭', '🎭', '🎪', '🎪', '🎯', '🎯', '🎲', '🎲', '🎸', '🎸', '🎺', '🎺'];
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+          <h3>Memory Game</h3>
+          <div style="text-align: center;">
+            <p id="memoryScore">Matches: 0/8</p>
+          </div>
+          <div id="memoryBoard" style="display: grid; grid-template-columns: repeat(4, 80px); gap: 10px;">
+            ${Array(16).fill(0).map((_, i) => `<button class="memory-card" onclick="flipMemoryCard(${i})" style="width: 80px; height: 80px; font-size: 32px; border: 2px solid #4f6ef7; border-radius: 8px; cursor: pointer; background: #dce7ff;" data-index="${i}">?</button>`).join('')}
+          </div>
+          <button onclick="resetMemory()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">New Game</button>
+        </div>
+      `;
+    }
+
+    let memoryState = { cards: [], flipped: [], matched: 0, locked: false };
+
+    function initMemoryGame() {
+      const cards = ['🎮', '🎮', '🎨', '🎨', '🎭', '🎭', '🎪', '🎪', '🎯', '🎯', '🎲', '🎲', '🎸', '🎸', '🎺', '🎺'];
+      memoryState = { 
+        cards: cards.sort(() => Math.random() - 0.5),
+        flipped: [],
+        matched: 0,
+        locked: false
+      };
+    }
+
+    function flipMemoryCard(index) {
+      if (memoryState.locked || memoryState.flipped.includes(index)) return;
+      const card = document.querySelector(`[data-index="${index}"]`);
+      card.textContent = memoryState.cards[index];
+      memoryState.flipped.push(index);
+      
+      if (memoryState.flipped.length === 2) {
+        memoryState.locked = true;
+        setTimeout(() => checkMemoryMatch(), 500);
+      }
+    }
+
+    function checkMemoryMatch() {
+      const [idx1, idx2] = memoryState.flipped;
+      if (memoryState.cards[idx1] === memoryState.cards[idx2]) {
+        memoryState.matched++;
+        document.getElementById('memoryScore').textContent = `Matches: ${memoryState.matched}/8`;
+        if (memoryState.matched === 8) {
+          setTimeout(() => alert('🎉 You Won!'), 300);
+        }
+      } else {
+        document.querySelector(`[data-index="${idx1}"]`).textContent = '?';
+        document.querySelector(`[data-index="${idx2}"]`).textContent = '?';
+      }
+      memoryState.flipped = [];
+      memoryState.locked = false;
+    }
+
+    function resetMemory() {
+      initMemoryGame();
+      const cards = document.querySelectorAll('.memory-card');
+      cards.forEach((card, i) => card.textContent = '?');
+      document.getElementById('memoryScore').textContent = 'Matches: 0/8';
+    }
+
+    // Hangman
+    function getHangmanGame() {
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+          <h3>Hangman</h3>
+          <p id="hangmanWord" style="font-size: 32px; letter-spacing: 10px; font-weight: bold;">_ _ _ _ _</p>
+          <p id="hangmanAttempts">Attempts left: 6</p>
+          <div id="hangmanButtons" style="display: grid; grid-template-columns: repeat(7, 40px); gap: 5px;">
+            ${Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ').map(letter => `<button onclick="guessHangman('${letter}')" style="width: 40px; height: 40px; font-size: 12px; font-weight: bold; border: 1px solid #4f6ef7; border-radius: 4px; cursor: pointer;" class="hangman-btn">${letter}</button>`).join('')}
+          </div>
+          <button onclick="resetHangman()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">New Game</button>
+        </div>
+      `;
+    }
+
+    let hangmanState = { word: '', guessed: [], attempts: 6, gameOver: false };
+
+    function initHangman() {
+      const words = ['JAVASCRIPT', 'FRIENDCONNECT', 'HANGMAN', 'DEVELOPER', 'AMAZING'];
+      hangmanState = {
+        word: words[Math.floor(Math.random() * words.length)],
+        guessed: [],
+        attempts: 6,
+        gameOver: false
+      };
+      updateHangmanDisplay();
+    }
+
+    function guessHangman(letter) {
+      if (hangmanState.gameOver || hangmanState.guessed.includes(letter)) return;
+      const btn = document.querySelector(`[onclick="guessHangman('${letter}')"]`);
+      btn.disabled = true;
+      hangmanState.guessed.push(letter);
+      
+      if (!hangmanState.word.includes(letter)) {
+        hangmanState.attempts--;
+      }
+      
+      updateHangmanDisplay();
+    }
+
+    function updateHangmanDisplay() {
+      const display = hangmanState.word.split('').map(letter => hangmanState.guessed.includes(letter) ? letter : '_').join(' ');
+      document.getElementById('hangmanWord').textContent = display;
+      document.getElementById('hangmanAttempts').textContent = `Attempts left: ${hangmanState.attempts}`;
+      
+      if (hangmanState.attempts === 0) {
+        hangmanState.gameOver = true;
+        document.getElementById('hangmanAttempts').textContent = `Game Over! Word was: ${hangmanState.word}`;
+      }
+      if (display.replace(/ /g, '') === hangmanState.word) {
+        hangmanState.gameOver = true;
+        document.getElementById('hangmanAttempts').textContent = '🎉 You Won!';
+      }
+    }
+
+    function resetHangman() {
+      initHangman();
+      const buttons = document.querySelectorAll('.hangman-btn');
+      buttons.forEach(btn => btn.disabled = false);
+    }
+
+    // Drawing App
+    function getDrawingApp() {
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+          <h3>Drawing Board</h3>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <label>Color: <input type="color" id="drawColor" value="#4f6ef7" style="width: 50px; height: 30px; cursor: pointer;"></label>
+            <label>Size: <input type="range" id="drawSize" min="1" max="20" value="3" style="width: 100px;"></label>
+            <button onclick="clearDrawing()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Clear</button>
+          </div>
+          <canvas id="drawingCanvas" width="500" height="300" style="border: 2px solid #4f6ef7; border-radius: 8px; background: white; cursor: crosshair;"></canvas>
+        </div>
+      `;
+    }
+
+    function initDrawing() {
+      const canvas = document.getElementById('drawingCanvas');
+      const ctx = canvas.getContext('2d');
+      let isDrawing = false;
+
+      canvas.addEventListener('mousedown', () => isDrawing = true);
+      canvas.addEventListener('mouseup', () => isDrawing = false);
+      canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const color = document.getElementById('drawColor').value;
+        const size = document.getElementById('drawSize').value;
+        
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function clearDrawing() {
+      const canvas = document.getElementById('drawingCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     // Start app
