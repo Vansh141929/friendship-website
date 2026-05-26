@@ -666,6 +666,7 @@
       <div class="login-buttons">
         <div id="google-signin-button"></div>
       </div>
+      <p style="margin-top: 20px; font-size: 0.85rem; color: #ef4444;" id="errorMessage" style="display: none;"></p>
     </div>
   </div>
 
@@ -821,6 +822,9 @@
   </main>
 
   <script>
+    // IMPORTANT: Replace with your actual Google OAuth Client ID
+    const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com';
+
     // Global state
     let user = null;
     let googleMeetLink = '';
@@ -863,46 +867,77 @@
 
     // Google Sign-In Configuration
     function initializeGoogleSignIn() {
-      google.accounts.id.initialize({
-        client_id: 'YOUR_GOOGLE_CLIENT_ID_HERE',
-        callback: handleGoogleSignIn
-      });
+      // Validate that client ID is set
+      if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com') {
+        showError('❌ Google Client ID not configured. Please set GOOGLE_CLIENT_ID in the script.');
+        return;
+      }
 
-      google.accounts.id.renderButton(
-        document.getElementById('google-signin-button'),
-        {
-          theme: 'outline',
-          size: 'large',
-          text: 'signin_with',
-          width: '300'
-        }
-      );
+      try {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleSignIn,
+          error_callback: handleGoogleSignInError
+        });
+
+        google.accounts.id.renderButton(
+          document.getElementById('google-signin-button'),
+          {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            width: '300'
+          }
+        );
+      } catch (error) {
+        showError('❌ Failed to initialize Google Sign-In: ' + error.message);
+      }
+    }
+
+    // Handle Google Sign-In errors
+    function handleGoogleSignInError(error) {
+      console.error('Google Sign-In Error:', error);
+      showError('❌ Sign-in failed: ' + (error.message || 'Unknown error. Check console.'));
+    }
+
+    // Display error messages
+    function showError(message) {
+      const errorElement = document.getElementById('errorMessage');
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+      console.error(message);
     }
 
     // Handle Google Sign-In response
     function handleGoogleSignIn(response) {
       if (response.credential) {
-        const base64Url = response.credential.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+        try {
+          const base64Url = response.credential.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
 
-        const userPayload = JSON.parse(jsonPayload);
+          const userPayload = JSON.parse(jsonPayload);
 
-        user = {
-          id: userPayload.sub,
-          name: userPayload.name,
-          email: userPayload.email,
-          avatar_url: userPayload.picture,
-          auth_provider: 'google',
-          login: userPayload.email.split('@')[0]
-        };
+          user = {
+            id: userPayload.sub,
+            name: userPayload.name,
+            email: userPayload.email,
+            avatar_url: userPayload.picture,
+            auth_provider: 'google',
+            login: userPayload.email.split('@')[0]
+          };
 
-        localStorage.setItem('friendconnect_user', JSON.stringify(user));
-        showApp();
-        addSystemMessage(`Welcome ${user.name}! Logged in with Gmail. Ready to start video calls!`);
-        generateGoogleMeetLink();
+          localStorage.setItem('friendconnect_user', JSON.stringify(user));
+          showApp();
+          addSystemMessage(`Welcome ${user.name}! Logged in with Gmail. Ready to start video calls!`);
+          generateGoogleMeetLink();
+        } catch (error) {
+          showError('❌ Failed to process login: ' + error.message);
+        }
+      } else {
+        showError('❌ No credential received from Google Sign-In');
       }
     }
 
@@ -916,8 +951,13 @@
     function checkAuthStatus() {
       const storedUser = localStorage.getItem('friendconnect_user');
       if (storedUser) {
-        user = JSON.parse(storedUser);
-        showApp();
+        try {
+          user = JSON.parse(storedUser);
+          showApp();
+        } catch (error) {
+          localStorage.removeItem('friendconnect_user');
+          showLogin();
+        }
       } else {
         showLogin();
       }
@@ -1000,118 +1040,80 @@
       `;
     }
 
-    // Friend selection
+    // Select friend
     function selectFriend(event) {
-      const item = event.currentTarget;
-      activeFriend = item.dataset.name || 'Friend';
-      activeFriendLabel.textContent = activeFriend;
-      highlightFriend(item);
-      addSystemMessage(`You selected ${activeFriend}. Send a friendly message or start a Google Meet video call.`);
-    }
-
-    // Highlight friend
-    function highlightFriend(item) {
-      document.querySelectorAll('.friend-item').forEach(el => {
-        el.style.background = 'white';
-        el.style.borderColor = 'rgba(15, 23, 42, 0.08)';
-      });
-      item.style.background = 'var(--primary-soft)';
-      item.style.borderColor = 'var(--primary)';
-    }
-
-    // Add new friend
-    function addFriend() {
-      const nameInput = document.getElementById('newFriendName');
-      const emailInput = document.getElementById('newFriendEmail');
-      const name = nameInput.value.trim();
-      const email = emailInput.value.trim();
-
-      if (!name) {
-        alert('Please enter a member name.');
-        return;
-      }
-
-      if (!email) {
-        alert('Please enter an email address.');
-        return;
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        alert('Please enter a valid email address.');
-        return;
-      }
-
-      const avatar = name.charAt(0).toUpperCase();
-      const li = document.createElement('li');
-      li.className = 'friend-item';
-      li.dataset.name = name;
-      li.dataset.email = email;
-      li.setAttribute('onclick', 'selectFriend(event)');
-      li.innerHTML = `
-        <div class="friend-details">
-          <div class="avatar">${avatar}</div>
-          <div class="friend-meta"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(email)}</span></div>
-        </div>
-        <button class="cta-button" type="button">Chat</button>
+      const friendItem = event.currentTarget;
+      const friendName = friendItem.getAttribute('data-name');
+      const friendEmail = friendItem.getAttribute('data-email');
+      
+      activeFriend = friendName;
+      activeFriendLabel.textContent = `Chatting with ${friendName}`;
+      
+      messageList.innerHTML = `
+        <div class="message received"><strong>${friendName}:</strong> Hey! How are you doing?<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></div>
       `;
-
-      friendList.appendChild(li);
-      nameInput.value = '';
-      emailInput.value = '';
-      addSystemMessage(`✅ ${name} (${email}) has been added to your friends!`);
     }
 
     // Send message
     function sendMessage() {
+      if (!activeFriend) {
+        alert('Please select a friend first.');
+        return;
+      }
+
       const message = messageInput.value.trim();
       if (!message) return;
 
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const div = document.createElement('div');
-      div.className = 'message sent';
-      div.innerHTML = `<strong>You:</strong> ${escapeHtml(message)}<small>${time}</small>`;
-
-      messageList.appendChild(div);
-      messageInput.value = '';
+      const messageElement = document.createElement('div');
+      messageElement.className = 'message sent';
+      messageElement.innerHTML = `<strong>You:</strong> ${escapeHtml(message)}<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>`;
+      messageList.appendChild(messageElement);
       messageList.scrollTop = messageList.scrollHeight;
-    }
-
-    // Scroll to chat
-    function scrollToChat() {
-      document.querySelector('.chat-panel').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // End call
-    function endCall() {
-      videoScreen.innerHTML = `
-        <div>
-          <div class="avatar-grid">
-            <div class="video-avatar">You</div>
-            <div class="video-avatar">Friend</div>
-          </div>
-          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">No live call yet — this is your friendly preview. Press the call button below to start a Google Meet call</p>
-        </div>`;
-      googleMeetLink = '';
-      addSystemMessage('📞 Call ended.');
+      messageInput.value = '';
     }
 
     // Fill prompt
     function fillPrompt() {
-      const prompt = promptInput.value;
-      messageInput.value = prompt;
-      scrollToChat();
+      messageInput.value = promptInput.value;
     }
 
     // Add system message
-    function addSystemMessage(message) {
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const div = document.createElement('div');
-      div.className = 'message received';
-      div.innerHTML = `<strong>System:</strong> ${message}<small>${time}</small>`;
-      messageList.appendChild(div);
+    function addSystemMessage(msg) {
+      const messageElement = document.createElement('div');
+      messageElement.className = 'message received';
+      messageElement.innerHTML = `<strong>System:</strong> ${escapeHtml(msg)}<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>`;
+      messageList.appendChild(messageElement);
       messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    // Add friend
+    function addFriend() {
+      const friendName = document.getElementById('newFriendName').value.trim();
+      const friendEmail = document.getElementById('newFriendEmail').value.trim();
+
+      if (!friendName || !friendEmail) {
+        alert('Please fill in both fields.');
+        return;
+      }
+
+      const newFriend = document.createElement('li');
+      newFriend.className = 'friend-item';
+      newFriend.setAttribute('data-name', friendName);
+      newFriend.setAttribute('data-email', friendEmail);
+      newFriend.onclick = selectFriend;
+      
+      const avatar = friendName.charAt(0).toUpperCase();
+      newFriend.innerHTML = `
+        <div class="friend-details">
+          <div class="avatar">${avatar}</div>
+          <div class="friend-meta"><strong>${escapeHtml(friendName)}</strong><span>${escapeHtml(friendEmail)}</span></div>
+        </div>
+        <button class="cta-button" type="button">Chat</button>
+      `;
+
+      friendList.appendChild(newFriend);
+      document.getElementById('newFriendName').value = '';
+      document.getElementById('newFriendEmail').value = '';
     }
 
     // Escape HTML
@@ -1126,262 +1128,56 @@
       return text.replace(/[&<>"']/g, m => map[m]);
     }
 
-    // APP FUNCTIONS
-
-    function openApp(appName, appKey) {
-      if (!user) {
-        alert('Please login first to use apps.');
-        return;
-      }
-      currentApp = appKey;
-      appModalTitle.textContent = appName;
-      const app = apps[appKey];
-      appContent.innerHTML = app.getHtml();
-      appModal.classList.add('active');
-      
-      // Initialize app after rendering
-      if (appKey === 'ticTacToe') initTicTacToe();
-      else if (appKey === 'memoryGame') initMemoryGame();
-      else if (appKey === 'hangman') initHangman();
-      else if (appKey === 'drawing') initDrawing();
+    // Scroll to chat
+    function scrollToChat() {
+      messageList.scrollTop = messageList.scrollHeight;
     }
 
+    // End call
+    function endCall() {
+      videoScreen.innerHTML = `
+        <div>
+          <div class="avatar-grid">
+            <div class="video-avatar">You</div>
+            <div class="video-avatar">${escapeHtml(activeFriend)}</div>
+          </div>
+          <p style="margin-top: 18px; font-size: 0.95rem; color: rgba(255,255,255,0.92);">Call ended. Ready to start a new one?</p>
+        </div>`;
+      addSystemMessage(`Call with ${activeFriend} ended.`);
+    }
+
+    // Game functions (placeholders)
+    function getTicTacToeGame() {
+      return '<div style="padding: 20px; text-align: center;"><h3>Tic Tac Toe Game</h3><p>Game board will render here</p><div style="display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; margin: 20px auto;"><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button><button style="width: 80px; height: 80px; font-size: 2rem;">-</button></div></div>';
+    }
+
+    function getMemoryGame() {
+      return '<div style="padding: 20px; text-align: center;"><h3>Memory Game</h3><p>Match pairs of cards</p><div style="display: grid; grid-template-columns: repeat(4, 60px); gap: 10px; margin: 20px auto;"><button style="width: 60px; height: 60px;">🎴</button><button style="width: 60px; height: 60px;">🎴</button><button style="width: 60px; height: 60px;">🎴</button><button style="width: 60px; height: 60px;">🎴</button><button style="width: 60px; height: 60px;">🎴</button><button style="width: 60px; height: 60px;">🎴</button><button style="width: 60px; height: 60px;">🎴</button><button style="width: 60px; height: 60px;">🎴</button></div></div>';
+    }
+
+    function getHangmanGame() {
+      return '<div style="padding: 20px; text-align: center;"><h3>Hangman Game</h3><p>Guess the word</p><p style="font-size: 2rem;">_ _ _ _ _</p><input type="text" placeholder="Guess a letter" style="padding: 8px; margin: 10px; width: 200px;"><button style="padding: 8px 16px;">Guess</button></div>';
+    }
+
+    function getDrawingApp() {
+      return '<div style="padding: 20px; text-align: center;"><h3>Drawing Board</h3><canvas id="drawingCanvas" width="400" height="300" style="border: 2px solid #ccc; cursor: crosshair; display: block; margin: 20px auto;"></canvas><button style="padding: 8px 16px; margin: 10px;">Clear</button></div>';
+    }
+
+    // Open app
+    function openApp(appName, appId) {
+      currentApp = apps[appId];
+      appModalTitle.textContent = appName;
+      appContent.innerHTML = currentApp.getHtml();
+      appModal.classList.add('active');
+    }
+
+    // Close app modal
     function closeAppModal() {
       appModal.classList.remove('active');
       currentApp = null;
     }
 
-    // Tic Tac Toe
-    function getTicTacToeGame() {
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
-          <h3>Tic Tac Toe</h3>
-          <div id="ticTacToeBoard" style="display: grid; grid-template-columns: repeat(3, 100px); gap: 10px;">
-            ${Array(9).fill(0).map((_, i) => `<button class="tic-cell" onclick="makeMove(${i})" style="width: 100px; height: 100px; font-size: 24px; font-weight: bold; border: 2px solid #4f6ef7; border-radius: 8px; cursor: pointer; background: white;"></button>`).join('')}
-          </div>
-          <div style="text-align: center;">
-            <p id="ticStatus">Player X's Turn</p>
-            <button onclick="resetTicTacToe()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">Reset Game</button>
-          </div>
-        </div>
-      `;
-    }
-
-    let ticTacToeState = { board: Array(9).fill(''), xNext: true, gameOver: false };
-
-    function initTicTacToe() {
-      ticTacToeState = { board: Array(9).fill(''), xNext: true, gameOver: false };
-      updateTicDisplay();
-    }
-
-    function makeMove(index) {
-      if (ticTacToeState.gameOver || ticTacToeState.board[index]) return;
-      ticTacToeState.board[index] = ticTacToeState.xNext ? 'X' : 'O';
-      ticTacToeState.xNext = !ticTacToeState.xNext;
-      updateTicDisplay();
-      checkTicWinner();
-    }
-
-    function updateTicDisplay() {
-      const cells = document.querySelectorAll('.tic-cell');
-      cells.forEach((cell, i) => {
-        cell.textContent = ticTacToeState.board[i];
-        cell.style.color = ticTacToeState.board[i] === 'X' ? '#4f6ef7' : '#ef4444';
-      });
-      if (!ticTacToeState.gameOver) {
-        document.getElementById('ticStatus').textContent = `Player ${ticTacToeState.xNext ? 'X' : 'O'}'s Turn`;
-      }
-    }
-
-    function checkTicWinner() {
-      const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-      for (let line of lines) {
-        const [a, b, c] = line;
-        if (ticTacToeState.board[a] && ticTacToeState.board[a] === ticTacToeState.board[b] && ticTacToeState.board[a] === ticTacToeState.board[c]) {
-          ticTacToeState.gameOver = true;
-          document.getElementById('ticStatus').textContent = `🎉 Player ${ticTacToeState.board[a]} Wins!`;
-          return;
-        }
-      }
-      if (ticTacToeState.board.every(cell => cell)) {
-        ticTacToeState.gameOver = true;
-        document.getElementById('ticStatus').textContent = "It's a Draw!";
-      }
-    }
-
-    function resetTicTacToe() {
-      initTicTacToe();
-    }
-
-    // Memory Game
-    function getMemoryGame() {
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
-          <h3>Memory Game</h3>
-          <div style="text-align: center;">
-            <p id="memoryScore">Matches: 0/8</p>
-          </div>
-          <div id="memoryBoard" style="display: grid; grid-template-columns: repeat(4, 80px); gap: 10px;">
-            ${Array(16).fill(0).map((_, i) => `<button class="memory-card" onclick="flipMemoryCard(${i})" style="width: 80px; height: 80px; font-size: 32px; border: 2px solid #4f6ef7; border-radius: 8px; cursor: pointer; background: #dce7ff;" data-index="${i}">?</button>`).join('')}
-          </div>
-          <button onclick="resetMemory()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">New Game</button>
-        </div>
-      `;
-    }
-
-    let memoryState = { cards: [], flipped: [], matched: 0, locked: false };
-
-    function initMemoryGame() {
-      const cards = ['🎮', '🎮', '🎨', '🎨', '🎭', '🎭', '🎪', '🎪', '🎯', '🎯', '🎲', '🎲', '🎸', '🎸', '🎺', '🎺'];
-      memoryState = { 
-        cards: cards.sort(() => Math.random() - 0.5),
-        flipped: [],
-        matched: 0,
-        locked: false
-      };
-    }
-
-    function flipMemoryCard(index) {
-      if (memoryState.locked || memoryState.flipped.includes(index)) return;
-      const card = document.querySelector(`[data-index="${index}"]`);
-      card.textContent = memoryState.cards[index];
-      memoryState.flipped.push(index);
-      
-      if (memoryState.flipped.length === 2) {
-        memoryState.locked = true;
-        setTimeout(() => checkMemoryMatch(), 500);
-      }
-    }
-
-    function checkMemoryMatch() {
-      const [idx1, idx2] = memoryState.flipped;
-      if (memoryState.cards[idx1] === memoryState.cards[idx2]) {
-        memoryState.matched++;
-        document.getElementById('memoryScore').textContent = `Matches: ${memoryState.matched}/8`;
-        if (memoryState.matched === 8) {
-          setTimeout(() => alert('🎉 You Won!'), 300);
-        }
-      } else {
-        document.querySelector(`[data-index="${idx1}"]`).textContent = '?';
-        document.querySelector(`[data-index="${idx2}"]`).textContent = '?';
-      }
-      memoryState.flipped = [];
-      memoryState.locked = false;
-    }
-
-    function resetMemory() {
-      initMemoryGame();
-      const cards = document.querySelectorAll('.memory-card');
-      cards.forEach((card, i) => card.textContent = '?');
-      document.getElementById('memoryScore').textContent = 'Matches: 0/8';
-    }
-
-    // Hangman
-    function getHangmanGame() {
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
-          <h3>Hangman</h3>
-          <p id="hangmanWord" style="font-size: 32px; letter-spacing: 10px; font-weight: bold;">_ _ _ _ _</p>
-          <p id="hangmanAttempts">Attempts left: 6</p>
-          <div id="hangmanButtons" style="display: grid; grid-template-columns: repeat(7, 40px); gap: 5px;">
-            ${Array.from('ABCDEFGHIJKLMNOPQRSTUVWXYZ').map(letter => `<button onclick="guessHangman('${letter}')" style="width: 40px; height: 40px; font-size: 12px; font-weight: bold; border: 1px solid #4f6ef7; border-radius: 4px; cursor: pointer;" class="hangman-btn">${letter}</button>`).join('')}
-          </div>
-          <button onclick="resetHangman()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">New Game</button>
-        </div>
-      `;
-    }
-
-    let hangmanState = { word: '', guessed: [], attempts: 6, gameOver: false };
-
-    function initHangman() {
-      const words = ['JAVASCRIPT', 'FRIENDCONNECT', 'HANGMAN', 'DEVELOPER', 'AMAZING'];
-      hangmanState = {
-        word: words[Math.floor(Math.random() * words.length)],
-        guessed: [],
-        attempts: 6,
-        gameOver: false
-      };
-      updateHangmanDisplay();
-    }
-
-    function guessHangman(letter) {
-      if (hangmanState.gameOver || hangmanState.guessed.includes(letter)) return;
-      const btn = document.querySelector(`[onclick="guessHangman('${letter}')"]`);
-      btn.disabled = true;
-      hangmanState.guessed.push(letter);
-      
-      if (!hangmanState.word.includes(letter)) {
-        hangmanState.attempts--;
-      }
-      
-      updateHangmanDisplay();
-    }
-
-    function updateHangmanDisplay() {
-      const display = hangmanState.word.split('').map(letter => hangmanState.guessed.includes(letter) ? letter : '_').join(' ');
-      document.getElementById('hangmanWord').textContent = display;
-      document.getElementById('hangmanAttempts').textContent = `Attempts left: ${hangmanState.attempts}`;
-      
-      if (hangmanState.attempts === 0) {
-        hangmanState.gameOver = true;
-        document.getElementById('hangmanAttempts').textContent = `Game Over! Word was: ${hangmanState.word}`;
-      }
-      if (display.replace(/ /g, '') === hangmanState.word) {
-        hangmanState.gameOver = true;
-        document.getElementById('hangmanAttempts').textContent = '🎉 You Won!';
-      }
-    }
-
-    function resetHangman() {
-      initHangman();
-      const buttons = document.querySelectorAll('.hangman-btn');
-      buttons.forEach(btn => btn.disabled = false);
-    }
-
-    // Drawing App
-    function getDrawingApp() {
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-          <h3>Drawing Board</h3>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <label>Color: <input type="color" id="drawColor" value="#4f6ef7" style="width: 50px; height: 30px; cursor: pointer;"></label>
-            <label>Size: <input type="range" id="drawSize" min="1" max="20" value="3" style="width: 100px;"></label>
-            <button onclick="clearDrawing()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer;">Clear</button>
-          </div>
-          <canvas id="drawingCanvas" width="500" height="300" style="border: 2px solid #4f6ef7; border-radius: 8px; background: white; cursor: crosshair;"></canvas>
-        </div>
-      `;
-    }
-
-    function initDrawing() {
-      const canvas = document.getElementById('drawingCanvas');
-      const ctx = canvas.getContext('2d');
-      let isDrawing = false;
-
-      canvas.addEventListener('mousedown', () => isDrawing = true);
-      canvas.addEventListener('mouseup', () => isDrawing = false);
-      canvas.addEventListener('mousemove', (e) => {
-        if (!isDrawing) return;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const color = document.getElementById('drawColor').value;
-        const size = document.getElementById('drawSize').value;
-        
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    }
-
-    function clearDrawing() {
-      const canvas = document.getElementById('drawingCanvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // Start app
+    // Start when page loads
     window.addEventListener('load', init);
   </script>
 </body>
