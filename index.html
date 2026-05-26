@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FriendConnect</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     :root {
       --background: #eef2f7;
@@ -526,6 +527,11 @@
       font-size: 0.85rem;
     }
 
+    #google-signin-button {
+      display: flex !important;
+      justify-content: center;
+    }
+
     @media (max-width: 980px) {
       .card { grid-template-columns: 1fr; }
       .hero { grid-template-columns: 1fr; }
@@ -538,11 +544,9 @@
   <div class="login-container" id="loginContainer">
     <div class="login-card">
       <h2>FriendConnect</h2>
-      <p>Sign in to start connecting with friends via video calls and messages.</p>
+      <p>Sign in with your Google account to start connecting with friends via video calls and messages.</p>
       <div class="login-buttons">
-        <button class="login-btn btn-google" onclick="showGoogleOption()">
-          📧 Google Meet Setup
-        </button>
+        <div id="google-signin-button"></div>
       </div>
     </div>
   </div>
@@ -676,9 +680,58 @@
     const promptInput = document.getElementById('promptInput');
     const videoScreen = document.getElementById('videoScreen');
 
+    // Google Sign-In Configuration
+    function initializeGoogleSignIn() {
+      google.accounts.id.initialize({
+        client_id: 'YOUR_GOOGLE_CLIENT_ID_HERE', // Replace with your actual Google Client ID
+        callback: handleGoogleSignIn
+      });
+
+      google.accounts.id.renderButton(
+        document.getElementById('google-signin-button'),
+        {
+          theme: 'outline',
+          size: 'large',
+          text: 'signin_with',
+          width: '300'
+        }
+      );
+    }
+
+    // Handle Google Sign-In response
+    function handleGoogleSignIn(response) {
+      if (response.credential) {
+        // Decode JWT token
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const userPayload = JSON.parse(jsonPayload);
+
+        // Create user object from Google data
+        user = {
+          id: userPayload.sub,
+          name: userPayload.name,
+          email: userPayload.email,
+          avatar_url: userPayload.picture,
+          auth_provider: 'google',
+          login: userPayload.email.split('@')[0]
+        };
+
+        // Store user in localStorage
+        localStorage.setItem('friendconnect_user', JSON.stringify(user));
+        showApp();
+        addSystemMessage(`Welcome ${user.name}! Logged in with Gmail. Ready to start video calls!`);
+        generateGoogleMeetLink();
+      }
+    }
+
     // Initialize
     function init() {
       checkAuthStatus();
+      initializeGoogleSignIn();
     }
 
     // Check if user is already logged in
@@ -690,32 +743,6 @@
       } else {
         showLogin();
       }
-    }
-
-    // Show Google Meet setup
-    function showGoogleOption() {
-      // Create a simple login form for manual user entry
-      const name = prompt("Enter your name to continue:");
-      if (name && name.trim()) {
-        simulateUserLogin(name.trim());
-      }
-    }
-
-    // Simulate user login (for demo)
-    function simulateUserLogin(name) {
-      // Create a basic user object
-      user = {
-        login: name.toLowerCase().replace(/\s+/g, '-'),
-        name: name,
-        avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4',
-        email: name.toLowerCase().replace(/\s+/g, '.') + '@example.com',
-        id: Math.floor(Math.random() * 1000000)
-      };
-      
-      localStorage.setItem('friendconnect_user', JSON.stringify(user));
-      showApp();
-      addSystemMessage(`Welcome ${user.name}! Ready to start video calls!`);
-      generateGoogleMeetLink();
     }
 
     // Generate Google Meet link
@@ -790,6 +817,10 @@
       localStorage.removeItem('friendconnect_user');
       user = null;
       googleMeetLink = '';
+      
+      // Sign out from Google
+      google.accounts.id.disableAutoSelect();
+      
       showLogin();
       messageList.innerHTML = `
         <div class="message received"><strong>System:</strong> You have been logged out. Please login again.<small>${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></div>
@@ -904,7 +935,7 @@
     }
 
     // Start app
-    init();
+    window.addEventListener('load', init);
   </script>
 </body>
 </html>
